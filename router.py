@@ -85,9 +85,9 @@ class Router:
         elif data.startswith("New Client"):
             _, new_client = data.split("-")
             self.clients.append(new_client)
-            clients_json = self.read_json("Network/clients_directory.json")
+            clients_json = self.read_json("clients_directory.json")
             clients_json[self.router_name] = self.clients
-            self.write_json(clients_json, "Network/clients_directory.json")
+            self.write_json(clients_json, "clients_directory.json")
 
         else:
             destiny, destiny_router, message = data.split("-")
@@ -150,7 +150,7 @@ class Router:
                 return next_router
         return None
 
-    def write_json(self, data, filename='Network/paths.json'):
+    def write_json(self, data, filename="paths.json"):
         """
         Writes data to a JSON file.
 
@@ -159,7 +159,7 @@ class Router:
             data : dict
                 the data to be written to the file
             filename : str, optional
-                the name of the file (default is 'Network/router.py/paths.json')
+                the name of the file (default is "paths.json")
         """
 
         with open(filename, 'w', encoding='utf-8-sig') as file:

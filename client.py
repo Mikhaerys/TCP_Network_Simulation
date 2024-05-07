@@ -29,7 +29,7 @@ class TCPClient:
             data = "-".join([destiny, destiny_router, message])
 
             if message == "audio(°_°)":
-                with open("audio_to_send.wav", "rb") as file:
+                with open("Audios to send/audio_to_send.wav", "rb") as file:
                     audio_data = file.read()
                     self.send_to_server(
                         self.server_host, self.server_port, data, audio_data)
@@ -46,7 +46,7 @@ class TCPClient:
             print("\n   New message: " + message)
             if message == "audio(°_°)":
                 new_socket.sendall("send it".encode())
-                with open("audio_copia.wav", "wb") as file:
+                with open("Audios received/audio_copia.wav", "wb") as file:
                     while True:
                         audio_data = new_socket.recv(32768)
                         if not audio_data:

@@ -1,0 +1,128 @@
+﻿[
+    {
+        "source": "node1",
+        "destination": "node1",
+        "path": [
+            "node1"
+        ]
+    },
+    {
+        "source": "node1",
+        "destination": "node2",
+        "path": [
+            "node1",
+            "node2"
+        ]
+    },
+    {
+        "source": "node1",
+        "destination": "node4",
+        "path": [
+            "node1",
+            "node4"
+        ]
+    },
+    {
+        "source": "node1",
+        "destination": "node3",
+        "path": [
+            "node1",
+            "node2",
+            "node3"
+        ]
+    },
+    {
+        "source": "node2",
+        "destination": "node2",
+        "path": [
+            "node2"
+        ]
+    },
+    {
+        "source": "node2",
+        "destination": "node1",
+        "path": [
+            "node2",
+            "node1"
+        ]
+    },
+    {
+        "source": "node2",
+        "destination": "node3",
+        "path": [
+            "node2",
+            "node3"
+        ]
+    },
+    {
+        "source": "node2",
+        "destination": "node4",
+        "path": [
+            "node2",
+            "node4"
+        ]
+    },
+    {
+        "source": "node3",
+        "destination": "node3",
+        "path": [
+            "node3"
+        ]
+    },
+    {
+        "source": "node3",
+        "destination": "node2",
+        "path": [
+            "node3",
+            "node2"
+        ]
+    },
+    {
+        "source": "node3",
+        "destination": "node4",
+        "path": [
+            "node3",
+            "node4"
+        ]
+    },
+    {
+        "source": "node3",
+        "destination": "node1",
+        "path": [
+            "node3",
+            "node2",
+            "node1"
+        ]
+    },
+    {
+        "source": "node4",
+        "destination": "node4",
+        "path": [
+            "node4"
+        ]
+    },
+    {
+        "source": "node4",
+        "destination": "node3",
+        "path": [
+            "node4",
+            "node3"
+        ]
+    },
+    {
+        "source": "node4",
+        "destination": "node1",
+        "path": [
+            "node4",
+            "node1"
+        ]
+    },
+    {
+        "source": "node4",
+        "destination": "node2",
+        "path": [
+            "node4",
+            "node2"
+        ]
+    }
+]
