@@ -35,44 +35,6 @@ class Controller:
         key = b'HcEnve-04K7wN5sgrz1JgKufDMIYBbbTXr0Wueg3v7I='
         self.fernet = Fernet(key)
 
-    def compute_all_shortest_paths(self, network, algorithm='dijkstra'):
-        """
-        Computes all shortest paths in the network and stores them in JSON format.
-
-        Parameters
-        ----------
-        network : NetworkX graph
-            The network graph.
-        algorithm : str, optional
-            The algorithm to use for computing shortest paths.
-            Options: 'dijkstra' or 'bellman_ford'. Default is 'dijkstra'.
-
-        Returns
-        -------
-        json_to_send : str
-            A JSON string representing all shortest paths in the network.
-        """
-        self.the_json = []
-        if algorithm == 'dijkstra':
-            all_paths = dict(nx.all_pairs_dijkstra_path(network.graph))
-        elif algorithm == 'bellman_ford':
-            all_paths = dict(nx.all_pairs_bellman_ford_path(network.graph))
-        else:
-            raise ValueError(
-                "Invalid algorithm specified. Use 'dijkstra' or 'bellman_ford'.")
-
-        for source, destinations in all_paths.items():
-            for destination, path in destinations.items():
-                self.the_json.append(
-                    {
-                        "source": source,
-                        "destination": destination,
-                        "path": path
-                    }
-                )
-        json_to_send = json.dumps(self.the_json)
-        return json_to_send
-
     def start(self):
         """
         Starts the controller and listens for incoming connections.
@@ -113,6 +75,44 @@ class Controller:
                 print("Starting node status checking")
                 ack_thread = threading.Thread(target=self.check_nodes_status)
                 ack_thread.start()
+
+    def compute_all_shortest_paths(self, network, algorithm='dijkstra'):
+        """
+        Computes all shortest paths in the network and stores them in JSON format.
+
+        Parameters
+        ----------
+        network : NetworkX graph
+            The network graph.
+        algorithm : str, optional
+            The algorithm to use for computing shortest paths.
+            Options: 'dijkstra' or 'bellman_ford'. Default is 'dijkstra'.
+
+        Returns
+        -------
+        json_to_send : str
+            A JSON string representing all shortest paths in the network.
+        """
+        self.the_json = []
+        if algorithm == 'dijkstra':
+            all_paths = dict(nx.all_pairs_dijkstra_path(network.graph))
+        elif algorithm == 'bellman_ford':
+            all_paths = dict(nx.all_pairs_bellman_ford_path(network.graph))
+        else:
+            raise ValueError(
+                "Invalid algorithm specified. Use 'dijkstra' or 'bellman_ford'.")
+
+        for source, destinations in all_paths.items():
+            for destination, path in destinations.items():
+                self.the_json.append(
+                    {
+                        "source": source,
+                        "destination": destination,
+                        "path": path
+                    }
+                )
+        json_to_send = json.dumps(self.the_json)
+        return json_to_send
 
     def send_shortest_paths(self, port, json_to_send):
         """

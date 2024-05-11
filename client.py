@@ -23,7 +23,7 @@ class TCPClient:
         while True:
             destiny = input("Enter the destiny port: ")
             message = input("Enter the message: ")
-            clients_directory = self.read_json("clients_directory.json")
+            clients_directory = self.read_json("Json/clients_directory.json")
             destiny_router = self.destination_router(
                 destiny, clients_directory)
             data = "-".join([destiny, destiny_router, message])
@@ -52,10 +52,6 @@ class TCPClient:
                         if not audio_data:
                             break
                         file.write(audio_data)
-
-    def close(self):
-        # Close the client socket
-        self.client_socket.close()
 
     def read_json(self, filename):
         """

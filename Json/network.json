@@ -1,0 +1,146 @@
+{
+    "Nodes": {
+        "1": "WA",
+        "2": "CA1",
+        "3": "CA2",
+        "4": "UT",
+        "5": "CO",
+        "6": "TX",
+        "7": "NE",
+        "8": "IL",
+        "9": "PA",
+        "10": "GA",
+        "11": "MI",
+        "12": "NY",
+        "13": "NJ",
+        "14": "DC"
+    },
+    "Ports": {
+        "WA": 8001,
+        "CA1": 8002,
+        "CA2": 8003,
+        "UT": 8004,
+        "CO": 8005,
+        "TX": 8006,
+        "NE": 8007,
+        "IL": 8008,
+        "PA": 8009,
+        "GA": 8010,
+        "MI": 8011,
+        "NY": 8012,
+        "NJ": 8013,
+        "DC": 8014
+    },
+    "Links": [
+        {
+            "from": 1,
+            "to": 2,
+            "distance": 2100
+        },
+        {
+            "from": 1,
+            "to": 8,
+            "distance": 4800
+        },
+        {
+            "from": 1,
+            "to": 3,
+            "distance": 3000
+        },
+        {
+            "from": 2,
+            "to": 3,
+            "distance": 1200
+        },
+        {
+            "from": 2,
+            "to": 4,
+            "distance": 1500
+        },
+        {
+            "from": 4,
+            "to": 5,
+            "distance": 1200
+        },
+        {
+            "from": 4,
+            "to": 11,
+            "distance": 3900
+        },
+        {
+            "from": 5,
+            "to": 6,
+            "distance": 2400
+        },
+        {
+            "from": 5,
+            "to": 7,
+            "distance": 1200
+        },
+        {
+            "from": 6,
+            "to": 10,
+            "distance": 2100
+        },
+        {
+            "from": 6,
+            "to": 14,
+            "distance": 3600
+        },
+        {
+            "from": 7,
+            "to": 8,
+            "distance": 1500
+        },
+        {
+            "from": 7,
+            "to": 10,
+            "distance": 2700
+        },
+        {
+            "from": 8,
+            "to": 9,
+            "distance": 1500
+        },
+        {
+            "from": 9,
+            "to": 10,
+            "distance": 1500
+        },
+        {
+            "from": 9,
+            "to": 12,
+            "distance": 600
+        },
+        {
+            "from": 9,
+            "to": 13,
+            "distance": 600
+        },
+        {
+            "from": 11,
+            "to": 12,
+            "distance": 1200
+        },
+        {
+            "from": 3,
+            "to": 6,
+            "distance": 3600
+        },
+        {
+            "from": 11,
+            "to": 13,
+            "distance": 1500
+        },
+        {
+            "from": 12,
+            "to": 14,
+            "distance": 600
+        },
+        {
+            "from": 13,
+            "to": 14,
+            "distance": 300
+        }
+    ]
+}
