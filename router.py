@@ -9,26 +9,15 @@ class Router:
     A class used to represent a Router
     """
 
-    def __init__(self, host, router_name):
+    def __init__(self):
         """
         Constructs all the necessary attributes for the router object.
-
-        Parameters
-        ----------
-            host : str
-                host address of the router
-            router_name : str
-                name of the router
         """
-
-        self.host = host
-        self.router_name = router_name
+        self.router_name = input("Write the node name: ")
         self.running = True
         self.json_routes = []
         self.server_socket = None
-        self.routers_ports = {
-            "node1": 9001, "node2": 9002, "node3": 9003, "node4": 9004
-        }
+        self.network = self.read_json("Json/network.json")
         self.clients = []
         key = b'HcEnve-04K7wN5sgrz1JgKufDMIYBbbTXr0Wueg3v7I='
         self.fernet = Fernet(key)
@@ -42,8 +31,8 @@ class Router:
         # Create a TCP server socket
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         # Bind the socket to the address and port
-        port = self.routers_ports[self.router_name]
-        self.server_socket.bind((self.host, port))
+        port = self.network["Ports"][self.router_name]
+        self.server_socket.bind(("localhost", port))
         # Listen for incoming connections
         self.server_socket.listen(5)
 
@@ -54,12 +43,12 @@ class Router:
                 f"Connection between {self.router_name} and {client_address}")
             # Start a new thread to handle the client
             client_handler_thread = threading.Thread(
-                target=self.handle_client, args=(client_socket,))
+                target=self.handle_connection, args=(client_socket,))
             client_handler_thread.start()
 
-    def handle_client(self, client_socket):
+    def handle_connection(self, client_socket):
         """
-        Handles a client connection.
+        Handles a connection.
 
         Parameters
         ----------
@@ -90,41 +79,54 @@ class Router:
             self.write_json(clients_json, "Json/clients_directory.json")
 
         else:
-            destiny, destiny_router, message = data.split("-")
-            if destiny_router == self.router_name:
-                print(message)
-                if message == "audio(°_°)":
-                    client_socket.sendall("send it".encode())
+            self.handle_client(data, client_socket)
+
+    def handle_client(self, data, client_socket):
+        """
+        Handles a client connection.
+
+        Parameters
+        ----------
+            data : str
+                data sent by the client
+            client_socket : socket
+                the client's socket
+        """
+        destiny, destiny_router, message = data.split("-")
+        if destiny_router == self.router_name:
+            print(message)
+            if message == "audio(°_°)":
+                client_socket.sendall("send it".encode())
+                new_data = client_socket.recv(32768)
+                audio_data = new_data
+                while True:
                     new_data = client_socket.recv(32768)
-                    audio_data = new_data
-                    while True:
-                        new_data = client_socket.recv(32768)
-                        if not new_data:
-                            break
-                        audio_data += new_data
+                    if not new_data:
+                        break
+                    audio_data += new_data
 
-                    self.send_to_server("localhost", int(
-                        destiny), message, audio_data)
-                else:
-                    self.send_to_server("localhost", int(destiny), message)
-
+                self.send_to_server("localhost", int(
+                    destiny), message, audio_data)
             else:
-                next_router = self.next_router(destiny_router)
-                next_port = self.routers_ports[next_router]
-                print(f"data forwarded to {next_router}")
-                if message == "audio(°_°)":
-                    client_socket.sendall("send it".encode())
+                self.send_to_server("localhost", int(destiny), message)
+
+        else:
+            next_router = self.next_router(destiny_router)
+            next_port = self.network["Ports"][next_router]
+            print(f"data forwarded to {next_router}")
+            if message == "audio(°_°)":
+                client_socket.sendall("send it".encode())
+                new_data = client_socket.recv(32768)
+                audio_data = new_data
+                while True:
                     new_data = client_socket.recv(32768)
-                    audio_data = new_data
-                    while True:
-                        new_data = client_socket.recv(32768)
-                        if not new_data:
-                            break
-                        audio_data += new_data
-                    self.send_to_server(
-                        "localhost", next_port, data, audio_data)
-                else:
-                    self.send_to_server("localhost", next_port, data)
+                    if not new_data:
+                        break
+                    audio_data += new_data
+                self.send_to_server(
+                    "localhost", next_port, data, audio_data)
+            else:
+                self.send_to_server("localhost", next_port, data)
 
     def next_router(self, destination):
         """
@@ -201,6 +203,7 @@ class Router:
         controller_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         # Connect to the server
         controller_socket.connect((server_host, server_port))
+        controller_socket.sendall(self.router_name.encode())
         print(f"{self.router_name} Waiting for the paths")
         controller_socket.close()
 
@@ -238,6 +241,5 @@ class Router:
 
 # Example usage
 if __name__ == "__main__":
-    node = input("Write the node name: ")
-    router = Router("localhost", node)
+    router = Router()
     router.start()

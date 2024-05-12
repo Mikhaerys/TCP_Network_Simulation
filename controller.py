@@ -3,8 +3,8 @@ import json
 import socket
 import threading
 import networkx as nx
-from network import Network
 from cryptography.fernet import Fernet
+from network import Network
 
 
 class Controller:
@@ -12,7 +12,7 @@ class Controller:
     A class to represent a controller for network routing.
     """
 
-    def __init__(self, host, port):
+    def __init__(self, port):
         """
         Constructs all the necessary attributes for the controller object.
 
@@ -23,48 +23,45 @@ class Controller:
             port : int
                 The port number of the controller.
         """
-        self.host = host
         self.port = port
-        self.server_socket = None
         self.the_json = []
         self.nsfnet = Network()
-        self.routers_ports = {
-            "node1": 9001, "node2": 9002, "node3": 9003, "node4": 9004
-        }
-
+        self.network = self.read_json("Json/network.json")
         key = b'HcEnve-04K7wN5sgrz1JgKufDMIYBbbTXr0Wueg3v7I='
         self.fernet = Fernet(key)
+        self.routers_quantity = 0
 
     def start(self):
         """
         Starts the controller and listens for incoming connections.
         """
         # Create a TCP server socket
-        self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         # Bind the socket to the address and port
-        self.server_socket.bind((self.host, self.port))
+        server_socket.bind(("localhost", self.port))
         # Listen for incoming connections
-        self.server_socket.listen(5)
-        print(f"Server listening on {self.host}:{self.port}...")
-        clients_number = 0
+        server_socket.listen(5)
+        print(f"Server listening on localhost: {self.port}...")
+        total_routers = len(self.network["Ports"])
 
         while True:
             # Accept a new connection
-            self.server_socket.accept()
+            router_socket, _ = server_socket.accept()
 
-            if clients_number < 4:
-                clients_number += 1
-                node_name = f'node{clients_number}'
-                self.nsfnet.add_node(clients_number, node_name)
+            if self.routers_quantity < total_routers:
+                router_name = router_socket.recv(1024).decode()
+                node_id = self.network["Nodes"][router_name]
+                self.nsfnet.add_node(node_id, router_name)
+                self.routers_quantity += 1
 
-            if clients_number == 4:
-                self.nsfnet.add_link(1, 2, 1/3)
-                self.nsfnet.add_link(2, 3, 1/1)
-                self.nsfnet.add_link(3, 4, 1/1)
-                self.nsfnet.add_link(4, 1, 1/2)
-                self.nsfnet.add_link(2, 4, 1/3)
+            if self.routers_quantity == total_routers:
+                for link in self.network["Links"]:
+                    from_node = link["from"]
+                    to_node = link["to"]
+                    distance = link["distance"]
+                    self.nsfnet.add_link(from_node, to_node, distance)
 
-                node_ports = self.routers_ports.values()
+                node_ports = self.network["Ports"].values()
                 json_to_send = self.compute_all_shortest_paths(self.nsfnet)
 
                 for port in node_ports:
@@ -173,17 +170,19 @@ class Controller:
 
     def check_nodes_status(self):
         """
-        Checks the status of all nodes in the network and updates the shortest paths if a node is down.
+        Checks the status of all nodes in the network and updates the shortest paths 
+        if a node is down.
         """
         while True:
             time.sleep(10)
-            node_ports = list(self.routers_ports.values())
+            node_ports = list(self.network["Ports"].values())
             for port in node_ports:
                 status = self.send_to_server(
                     "localhost", port, "ACK")
                 if status == "no response":
                     node_id = node_ports.index(port) + 1
                     self.nsfnet.remove_node(node_id)
+                    self.routers_quantity -= 1
                     json_to_send = self.compute_all_shortest_paths(self.nsfnet)
 
                     for good_port in node_ports:
@@ -194,7 +193,26 @@ class Controller:
 
             print("check completed")
 
+    def read_json(self, filename):
+        """
+        Reads a JSON file and loads the data into a dictionary.
+
+        Parameters
+        ----------
+            filename : str
+                the name of the file
+
+        Returns
+        -------
+            data: dict
+                the json in a dictionary form
+        """
+
+        with open(filename, 'r', encoding='utf-8-sig') as file:
+            data = json.load(file)
+        return data
+
 
 if __name__ == "__main__":
-    controller = Controller("localhost", 8888)
+    controller = Controller(8888)
     controller.start()
