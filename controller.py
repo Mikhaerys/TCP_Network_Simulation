@@ -49,7 +49,8 @@ class Controller:
             router_socket, _ = server_socket.accept()
 
             if self.routers_quantity < total_routers:
-                router_name = router_socket.recv(1024).decode()
+                router_name = self.fernet.decrypt(
+                    router_socket.recv(1024).decode())
                 node_id = self.network["Nodes"][router_name]
                 self.nsfnet.add_node(node_id, router_name)
                 self.routers_quantity += 1
@@ -127,7 +128,7 @@ class Controller:
         """
         router_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         router_socket.connect(("localhost", port))
-        router_socket.sendall("New Path".encode())
+        router_socket.sendall(self.fernet.encrypt("New Path".encode()))
         router_socket.sendall(self.fernet.encrypt(json_to_send.encode()))
         router_socket.close()
         print("Paths sended")
@@ -156,9 +157,10 @@ class Controller:
             # Connect to the server
             server_socket.connect((server_host, server_port))
             # Send the message to the server
-            server_socket.sendall(message.encode())
+            server_socket.sendall(self.fernet.encrypt(message.encode()))
             # Receive a response from the server
-            server_response = server_socket.recv(1024).decode()
+            server_response = self.fernet.decrypt(
+                server_socket.recv(1024).decode())
             server_socket.close()
             return server_response
         except ConnectionRefusedError:

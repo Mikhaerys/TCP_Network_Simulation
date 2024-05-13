@@ -57,13 +57,13 @@ class Router:
         """
 
         # Receive data from the client
-        data = client_socket.recv(1024).decode()
+        data = self.fernet.decrypt(client_socket.recv(1024).decode())
         if not data or data == "shutdown-the-router":
             self.running = False
 
         elif data == "ACK":
-            ack_answer = "I am chill bro"
-            client_socket.sendall(ack_answer.encode())
+            ack_answer = "I am ok"
+            client_socket.sendall(self.fernet.encrypt(ack_answer.encode()))
 
         elif data == "New Path":
             self.json_routes = json.loads(
@@ -96,11 +96,11 @@ class Router:
         if destiny_router == self.router_name:
             print(message)
             if message == "audio(°_°)":
-                client_socket.sendall("send it".encode())
-                new_data = client_socket.recv(32768)
+                client_socket.sendall(self.fernet.encrypt("send it".encode()))
+                new_data = self.fernet.decrypt(client_socket.recv(32768))
                 audio_data = new_data
                 while True:
-                    new_data = client_socket.recv(32768)
+                    new_data = self.fernet.decrypt(client_socket.recv(32768))
                     if not new_data:
                         break
                     audio_data += new_data
@@ -115,11 +115,11 @@ class Router:
             next_port = self.network["Ports"][next_router]
             print(f"data forwarded to {next_router}")
             if message == "audio(°_°)":
-                client_socket.sendall("send it".encode())
-                new_data = client_socket.recv(32768)
+                client_socket.sendall(self.fernet.encrypt("send it".encode()))
+                new_data = self.fernet.decrypt(client_socket.recv(32768))
                 audio_data = new_data
                 while True:
-                    new_data = client_socket.recv(32768)
+                    new_data = self.fernet.decrypt(client_socket.recv(32768))
                     if not new_data:
                         break
                     audio_data += new_data
@@ -203,7 +203,9 @@ class Router:
         controller_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         # Connect to the server
         controller_socket.connect((server_host, server_port))
-        controller_socket.sendall(self.router_name.encode())
+        controller_socket.sendall(
+            self.fernet.encrypt(self.router_name.encode())
+        )
         print(f"{self.router_name} Waiting for the paths")
         controller_socket.close()
 
@@ -229,11 +231,11 @@ class Router:
             # Connect to the server
             server_socket.connect((server_host, server_port))
             # Send the message to the server
-            server_socket.sendall(message.encode())
+            server_socket.sendall(self.fernet.encrypt(message.encode()))
 
             if audio is not None:
                 server_socket.recv(1024)
-                server_socket.sendall(audio)
+                server_socket.sendall(self.fernet.encrypt(audio))
         finally:
             # Close the client socket
             server_socket.close()

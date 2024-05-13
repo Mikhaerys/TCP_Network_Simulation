@@ -1,6 +1,7 @@
 import json
 import socket
 import threading
+from cryptography.fernet import Fernet
 
 
 class TCPClient:
@@ -10,6 +11,8 @@ class TCPClient:
             input("write the port of the router to connect to: "))
         self.client_socket = None
         self.client_port = int(input("Write the client port: "))
+        key = b'HcEnve-04K7wN5sgrz1JgKufDMIYBbbTXr0Wueg3v7I='
+        self.fernet = Fernet(key)
 
     def connect(self):
 
@@ -42,13 +45,14 @@ class TCPClient:
         self.client_socket.listen(5)
         while True:
             new_socket, _ = self.client_socket.accept()
-            message = new_socket.recv(1024).decode()
+            message = self.fernet.decrypt(new_socket.recv(1024).decode())
             print("\n   New message: " + message)
             if message == "audio(°_°)":
-                new_socket.sendall("send it".encode())
+                new_socket.sendall(self.fernet.encrypt("send it".encode()))
                 with open("Audios received/audio_copia.wav", "wb") as file:
                     while True:
-                        audio_data = new_socket.recv(32768)
+                        audio_data = self.fernet.decrypt(
+                            new_socket.recv(32768))
                         if not audio_data:
                             break
                         file.write(audio_data)
@@ -100,11 +104,11 @@ class TCPClient:
             # Connect to the server
             server_socket.connect((server_host, server_port))
             # Send the message to the server
-            server_socket.sendall(message.encode())
+            server_socket.sendall(self.fernet.encrypt(message.encode()))
 
             if audio is not None:
                 server_socket.recv(1024)
-                server_socket.sendall(audio)
+                server_socket.sendall(self.fernet.encrypt(audio))
         finally:
             # Close the client socket
             server_socket.close()
