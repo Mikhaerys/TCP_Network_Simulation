@@ -31,6 +31,14 @@ class Controller:
         self.fernet = Fernet(key)
         self.routers_quantity = 0
 
+        dijkstra = input("Use dijkstra? (Y)/(N): ")
+        if dijkstra == "N":
+            print("Bellman-Ford algorithm established")
+            self.algorithm = "bellman_ford"
+        else:
+            print("Dijkstra algorithm set by default")
+            self.algorithm = "dijkstra"
+
     def start(self):
         """
         Starts the controller and listens for incoming connections.
@@ -74,7 +82,7 @@ class Controller:
                 ack_thread = threading.Thread(target=self.check_nodes_status)
                 ack_thread.start()
 
-    def compute_all_shortest_paths(self, network, algorithm='dijkstra'):
+    def compute_all_shortest_paths(self, network):
         """
         Computes all shortest paths in the network and stores them in JSON format.
 
@@ -82,9 +90,6 @@ class Controller:
         ----------
         network : NetworkX graph
             The network graph.
-        algorithm : str, optional
-            The algorithm to use for computing shortest paths.
-            Options: 'dijkstra' or 'bellman_ford'. Default is 'dijkstra'.
 
         Returns
         -------
@@ -92,9 +97,9 @@ class Controller:
             A JSON string representing all shortest paths in the network.
         """
         self.the_json = []
-        if algorithm == 'dijkstra':
+        if self.algorithm == 'dijkstra':
             all_paths = dict(nx.all_pairs_dijkstra_path(network.graph))
-        elif algorithm == 'bellman_ford':
+        elif self.algorithm == 'bellman_ford':
             all_paths = dict(nx.all_pairs_bellman_ford_path(network.graph))
         else:
             raise ValueError(
