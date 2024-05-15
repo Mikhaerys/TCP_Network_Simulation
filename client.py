@@ -32,10 +32,15 @@ class TCPClient:
             data = "-".join([destiny, destiny_router, message])
 
             if message == "audio(°_°)":
-                with open("Audios to send/audio_to_send.wav", "rb") as file:
-                    audio_data = file.read()
-                    self.send_to_server(
-                        self.server_host, self.server_port, data, audio_data)
+                audio_name = input(
+                    "Enter the name of the audio you want to send: ")
+                try:
+                    with open(f"Audios to send/{audio_name}", "rb") as file:
+                        audio_data = file.read()
+                        self.send_to_server(
+                            self.server_host, self.server_port, data, audio_data)
+                except FileNotFoundError:
+                    print("File not found.")
             else:
                 self.send_to_server(self.server_host, self.server_port, data)
 
