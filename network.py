@@ -53,3 +53,16 @@ class Network:
         labels = nx.get_edge_attributes(self.graph, 'weight')
         nx.draw_networkx_edge_labels(self.graph, pos, edge_labels=labels)
         plt.show()
+
+    def visualize_path(self, path):
+        pos = nx.spring_layout(self.graph)
+        nx.draw(
+            self.graph, pos, with_labels=True, node_color='lightblue',
+            node_size=500, font_size=10, font_weight='bold'
+        )
+        path_edges = list(zip(path, path[1:]))
+        nx.draw_networkx_nodes(
+            self.graph, pos, nodelist=path, node_color='red')
+        nx.draw_networkx_edges(
+            self.graph, pos, edgelist=path_edges, edge_color='red', width=2)
+        plt.show()

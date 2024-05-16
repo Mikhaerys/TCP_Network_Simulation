@@ -1,6 +1,7 @@
 import time
 import json
 import socket
+import pickle
 import threading
 import networkx as nx
 from cryptography.fernet import Fernet
@@ -58,29 +59,30 @@ class Controller:
 
             if self.routers_quantity < total_routers:
                 router_name = self.fernet.decrypt(
-                    router_socket.recv(1024).decode())
+                    router_socket.recv(1024)).decode()
                 node_id = self.network["Nodes"][router_name]
                 self.nsfnet.add_node(node_id, router_name)
                 self.routers_quantity += 1
 
-            if self.routers_quantity == total_routers:
-                for link in self.network["Links"]:
-                    from_node = link["from"]
-                    to_node = link["to"]
-                    distance = link["distance"]
-                    self.nsfnet.add_link(from_node, to_node, distance)
+                if self.routers_quantity == total_routers:
+                    for link in self.network["Links"]:
+                        from_node = link["from"]
+                        to_node = link["to"]
+                        distance = link["distance"]
+                        self.nsfnet.add_link(from_node, to_node, 1/distance)
 
-                node_ports = self.network["Ports"].values()
-                json_to_send = self.compute_all_shortest_paths(self.nsfnet)
+                    node_ports = self.network["Ports"].values()
+                    json_to_send = self.compute_all_shortest_paths(self.nsfnet)
 
-                for port in node_ports:
-                    path_thread = threading.Thread(
-                        target=self.send_shortest_paths, args=(port, json_to_send))
-                    path_thread.start()
+                    for port in node_ports:
+                        path_thread = threading.Thread(
+                            target=self.send_shortest_paths, args=(port, json_to_send))
+                        path_thread.start()
 
-                print("Starting node status checking")
-                ack_thread = threading.Thread(target=self.check_nodes_status)
-                ack_thread.start()
+                    print("Starting node status checking")
+                    ack_thread = threading.Thread(
+                        target=self.check_nodes_status)
+                    ack_thread.start()
 
     def compute_all_shortest_paths(self, network):
         """
@@ -135,8 +137,10 @@ class Controller:
         router_socket.connect(("localhost", port))
         router_socket.sendall(self.fernet.encrypt("New Path".encode()))
         router_socket.sendall(self.fernet.encrypt(json_to_send.encode()))
-        router_socket.close()
         print("Paths sended")
+
+        router_socket.sendall(pickle.dumps(self.nsfnet))
+        router_socket.close()
 
     def send_to_server(self, server_host, server_port, message):
         """
@@ -165,7 +169,7 @@ class Controller:
             server_socket.sendall(self.fernet.encrypt(message.encode()))
             # Receive a response from the server
             server_response = self.fernet.decrypt(
-                server_socket.recv(1024).decode())
+                server_socket.recv(1024)).decode()
             server_socket.close()
             return server_response
         except ConnectionRefusedError:

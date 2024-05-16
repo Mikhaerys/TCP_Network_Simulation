@@ -1,4 +1,5 @@
 import json
+import pickle
 import socket
 import threading
 from cryptography.fernet import Fernet
@@ -21,6 +22,7 @@ class Router:
         self.clients = []
         key = b'HcEnve-04K7wN5sgrz1JgKufDMIYBbbTXr0Wueg3v7I='
         self.fernet = Fernet(key)
+        self.nsfnet = None
 
     def start(self):
         """
@@ -57,8 +59,8 @@ class Router:
         """
 
         # Receive data from the client
-        data = self.fernet.decrypt(client_socket.recv(1024).decode())
-        if not data or data == "shutdown-the-router":
+        data = self.fernet.decrypt(client_socket.recv(1024)).decode()
+        if not data or data == "Shutdown":
             self.running = False
 
         elif data == "ACK":
@@ -69,6 +71,7 @@ class Router:
             self.json_routes = json.loads(
                 self.fernet.decrypt(client_socket.recv(4096)).decode())
             print(f"The path reached {self.router_name}")
+            self.nsfnet = pickle.loads(client_socket.recv(4096))
             self.write_json(self.json_routes)
 
         elif data.startswith("New Client"):
@@ -92,23 +95,24 @@ class Router:
             client_socket : socket
                 the client's socket
         """
-        destiny, destiny_router, message = data.split("-")
+        _, _, destiny, destiny_router, message = data.split("-")
         if destiny_router == self.router_name:
             print(message)
             if message == "audio(°_°)":
                 client_socket.sendall(self.fernet.encrypt("send it".encode()))
-                new_data = self.fernet.decrypt(client_socket.recv(32768))
+                new_data = client_socket.recv(32768)
                 audio_data = new_data
                 while True:
-                    new_data = self.fernet.decrypt(client_socket.recv(32768))
+                    new_data = client_socket.recv(32768)
                     if not new_data:
                         break
                     audio_data += new_data
 
                 self.send_to_server("localhost", int(
-                    destiny), message, audio_data)
+                    destiny), data, audio=audio_data, nsfnet=True)
             else:
-                self.send_to_server("localhost", int(destiny), message)
+                self.send_to_server("localhost", int(
+                    destiny), data, nsfnet=True)
 
         else:
             next_router = self.next_router(destiny_router)
@@ -116,15 +120,15 @@ class Router:
             print(f"data forwarded to {next_router}")
             if message == "audio(°_°)":
                 client_socket.sendall(self.fernet.encrypt("send it".encode()))
-                new_data = self.fernet.decrypt(client_socket.recv(32768))
+                new_data = client_socket.recv(32768)
                 audio_data = new_data
                 while True:
-                    new_data = self.fernet.decrypt(client_socket.recv(32768))
+                    new_data = client_socket.recv(32768)
                     if not new_data:
                         break
                     audio_data += new_data
                 self.send_to_server(
-                    "localhost", next_port, data, audio_data)
+                    "localhost", next_port, data, audio=audio_data)
             else:
                 self.send_to_server("localhost", next_port, data)
 
@@ -209,7 +213,7 @@ class Router:
         print(f"{self.router_name} Waiting for the paths")
         controller_socket.close()
 
-    def send_to_server(self, server_host, server_port, message, audio=None):
+    def send_to_server(self, server_host, server_port, message, audio=None, nsfnet=None):
         """
         Sends a message to the server.
 
@@ -233,9 +237,13 @@ class Router:
             # Send the message to the server
             server_socket.sendall(self.fernet.encrypt(message.encode()))
 
+            if nsfnet is not None:
+                server_socket.recv(1024)
+                server_socket.sendall(pickle.dumps(self.nsfnet))
+
             if audio is not None:
                 server_socket.recv(1024)
-                server_socket.sendall(self.fernet.encrypt(audio))
+                server_socket.sendall(audio)
         finally:
             # Close the client socket
             server_socket.close()

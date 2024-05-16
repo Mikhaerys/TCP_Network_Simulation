@@ -1,16 +1,17 @@
 import json
+import pickle
 import socket
 import threading
 from cryptography.fernet import Fernet
 
 
 class TCPClient:
-    def __init__(self, server_host):
-        self.server_host = server_host
-        self.server_port = int(
-            input("write the port of the router to connect to: "))
+    def __init__(self):
+        self.router_name = input(
+            "write the name of the router to connect to: ")
         self.client_socket = None
-        self.client_port = int(input("Write the client port: "))
+        self.client_name = input("Enter your name: ")
+        self.client_port = int(input("Enter the client port: "))
         key = b'HcEnve-04K7wN5sgrz1JgKufDMIYBbbTXr0Wueg3v7I='
         self.fernet = Fernet(key)
 
@@ -20,7 +21,9 @@ class TCPClient:
             target=self.client_reception)
         client_reception_thread.start()
 
-        self.send_to_server(self.server_host, self.server_port,
+        network = self.read_json("Json/network.json")
+        server_port = network["Ports"][self.router_name]
+        self.send_to_server("localhost", server_port,
                             f"New Client-{self.client_port}")
 
         while True:
@@ -29,7 +32,10 @@ class TCPClient:
             clients_directory = self.read_json("Json/clients_directory.json")
             destiny_router = self.destination_router(
                 destiny, clients_directory)
-            data = "-".join([destiny, destiny_router, message])
+            data = "-".join(
+                [self.client_name, self.router_name,
+                    destiny, destiny_router, message]
+            )
 
             if message == "audio(°_°)":
                 audio_name = input(
@@ -38,29 +44,44 @@ class TCPClient:
                     with open(f"Audios to send/{audio_name}", "rb") as file:
                         audio_data = file.read()
                         self.send_to_server(
-                            self.server_host, self.server_port, data, audio_data)
+                            "localhost", server_port, data, audio_data)
                 except FileNotFoundError:
                     print("File not found.")
+            elif message == "Shutdown":
+                self.send_to_server("localhost", server_port, message)
             else:
-                self.send_to_server(self.server_host, self.server_port, data)
+                self.send_to_server("localhost", server_port, data)
 
     def client_reception(self):
         self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.client_socket.bind((self.server_host, self.client_port))
+        self.client_socket.bind(("localhost", self.client_port))
         self.client_socket.listen(5)
         while True:
             new_socket, _ = self.client_socket.accept()
-            message = self.fernet.decrypt(new_socket.recv(1024).decode())
-            print("\n   New message: " + message)
+            data = self.fernet.decrypt(new_socket.recv(1024)).decode()
+            source, source_router, _, _, message = data.split("-")
+            print(f"\n{source}: {message}")
+
+            new_socket.sendall(self.fernet.encrypt("send it".encode()))
+            nsfnet = pickle.loads(new_socket.recv(4096))
+
+            json_paths = self.read_json("Json/paths.json")
+            for paths in json_paths:
+                if paths["source"] == source_router and paths["destination"] == self.router_name:
+                    path = paths["path"]
+
             if message == "audio(°_°)":
                 new_socket.sendall(self.fernet.encrypt("send it".encode()))
+
                 with open("Audios received/audio_copia.wav", "wb") as file:
                     while True:
-                        audio_data = self.fernet.decrypt(
-                            new_socket.recv(32768))
+                        audio_data = new_socket.recv(32768)
                         if not audio_data:
                             break
                         file.write(audio_data)
+                print("Received audio")
+
+            nsfnet.visualize_path(path)
 
     def read_json(self, filename):
         """
@@ -85,7 +106,7 @@ class TCPClient:
         for router, clients in json_data.items():
             if port in clients:
                 return router
-        return "the"
+        return "None"
 
     def send_to_server(self, server_host, server_port, message, audio=None):
         """
@@ -113,7 +134,7 @@ class TCPClient:
 
             if audio is not None:
                 server_socket.recv(1024)
-                server_socket.sendall(self.fernet.encrypt(audio))
+                server_socket.sendall(audio)
         finally:
             # Close the client socket
             server_socket.close()
@@ -121,5 +142,5 @@ class TCPClient:
 
 # Example usage
 if __name__ == "__main__":
-    server_client = TCPClient("localhost")
+    server_client = TCPClient()
     server_client.connect()
