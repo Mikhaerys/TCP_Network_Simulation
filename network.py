@@ -5,17 +5,49 @@ from link import Link
 
 
 class Network:
+    """
+    A class to represent a network.
+    """
+
     def __init__(self):
+        """
+        Constructs all the necessary attributes for the network object.
+        """
         self.nodes = {}
         self.links = []
         self.graph = nx.Graph()
 
     def add_node(self, node_id, name, node_type='router'):
+        """
+        Adds a node to the network.
+
+        Parameters
+        ----------
+        node_id : str
+            The ID of the node.
+        name : str
+            The name of the node.
+        node_type : str, optional
+            The type of the node (default is 'router').
+        """
+
         if node_id not in self.nodes:
             self.nodes[node_id] = Node(node_id, name, node_type)
             self.graph.add_node(name, node_type=node_type)
 
     def add_link(self, source_id, destination_id, bandwidth):
+        """
+        Adds a link between two nodes in the network.
+
+        Parameters
+        ----------
+        source_id : str
+            The ID of the source node.
+        destination_id : str
+            The ID of the destination node.
+        bandwidth : int
+            The bandwidth of the link.
+        """
         if source_id in self.nodes and destination_id in self.nodes:
             self.links.append(
                 Link(self.nodes[source_id], self.nodes[destination_id], bandwidth))
@@ -25,6 +57,14 @@ class Network:
             print("Error: One or both nodes not found in the network.")
 
     def remove_node(self, node_id):
+        """
+        Removes a node and its associated links from the network.
+
+        Parameters
+        ----------
+        node_id : str
+            The ID of the node to be removed.
+        """
         if node_id in self.nodes:
             node_name = self.nodes[node_id].name
             self.graph.remove_node(node_name)
@@ -39,6 +79,9 @@ class Network:
             print(f"Node ID {node_id} not found in the network.")
 
     def display_network(self):
+        """
+        Prints the nodes and links in the network.
+        """
         print("Nodes in the network:")
         for node in self.nodes.values():
             print(node)
@@ -47,6 +90,9 @@ class Network:
             print(link)
 
     def visualize_network(self):
+        """
+        Visualizes the network using matplotlib.
+        """
         pos = nx.spring_layout(self.graph)  # positions for all nodes
         nx.draw(self.graph, pos, with_labels=True, node_size=7000,
                 node_color="skyblue", font_size=15, font_weight="bold")
@@ -55,6 +101,14 @@ class Network:
         plt.show()
 
     def visualize_path(self, path):
+        """
+        Visualizes a specific path in the network.
+
+        Parameters
+        ----------
+        path : list
+            A list of node IDs representing the path.
+        """
         pos = nx.spring_layout(self.graph)
         nx.draw(
             self.graph, pos, with_labels=True, node_color='lightblue',

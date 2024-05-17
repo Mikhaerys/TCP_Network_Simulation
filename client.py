@@ -6,6 +6,10 @@ from cryptography.fernet import Fernet
 
 
 class TCPClient:
+    """
+    A class to work as a client in the network.
+    """
+
     def __init__(self):
         self.router_name = input(
             "write the name of the router to connect to: ")
@@ -16,6 +20,9 @@ class TCPClient:
         self.fernet = Fernet(key)
 
     def connect(self):
+        """
+        Connect the client to the router and send the messages
+        """
 
         client_reception_thread = threading.Thread(
             target=self.client_reception)
@@ -53,6 +60,10 @@ class TCPClient:
                 self.send_to_server("localhost", server_port, data)
 
     def client_reception(self):
+        """
+        It is responsible for receiving all messages that reach the client
+        and showing the path the message followed.
+        """
         self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.client_socket.bind(("localhost", self.client_port))
         self.client_socket.listen(5)
@@ -103,6 +114,23 @@ class TCPClient:
         return data
 
     def destination_router(self, port, json_data):
+        """
+        Find which router a certain client is connected to
+
+        Parameters
+        ----------
+            port : int
+                the client port to which a message is to be sent
+
+            json_data: dict
+                the json dictionary containing the client directory
+
+        Returns
+        -------
+            router: str
+                name of the router to which that client is connected
+        """
+
         for router, clients in json_data.items():
             if port in clients:
                 return router
