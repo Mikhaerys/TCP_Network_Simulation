@@ -18,6 +18,7 @@ class TCPClient:
         self.client_port = int(input("Enter the client port: "))
         key = b'HcEnve-04K7wN5sgrz1JgKufDMIYBbbTXr0Wueg3v7I='
         self.fernet = Fernet(key)
+        self.nsfnet = None
 
     def connect(self):
         """
@@ -73,9 +74,6 @@ class TCPClient:
             source, source_router, _, _, message = data.split("-")
             print(f"\n{source}: {message}")
 
-            new_socket.sendall(self.fernet.encrypt("send it".encode()))
-            nsfnet = pickle.loads(new_socket.recv(4096))
-
             json_paths = self.read_json("Json/paths.json")
             for paths in json_paths:
                 if paths["source"] == source_router and paths["destination"] == self.router_name:
@@ -92,7 +90,8 @@ class TCPClient:
                         file.write(audio_data)
                 print("Received audio")
 
-            nsfnet.visualize_path(path)
+            self.get_nsfnet()
+            self.nsfnet.visualize_path(path)
 
     def read_json(self, filename):
         """
@@ -166,6 +165,13 @@ class TCPClient:
         finally:
             # Close the client socket
             server_socket.close()
+
+    def get_nsfnet(self):
+        server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server_socket.connect(("localhost", 8888))
+        server_socket.sendall(self.fernet.encrypt("nsfnet".encode()))
+        self.nsfnet = pickle.loads(server_socket.recv(32768))
+        server_socket.close()
 
 
 # Example usage

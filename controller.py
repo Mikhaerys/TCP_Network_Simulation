@@ -25,9 +25,9 @@ class Controller:
                 The port number of the controller.
         """
         self.port = port
-        self.the_json = []
         self.nsfnet = Network()
         self.network = self.read_json("Json/network.json")
+        self.node_ports = list(self.network["Ports"].values())
         key = b'HcEnve-04K7wN5sgrz1JgKufDMIYBbbTXr0Wueg3v7I='
         self.fernet = Fernet(key)
         self.routers_quantity = 0
@@ -56,10 +56,13 @@ class Controller:
         while True:
             # Accept a new connection
             router_socket, _ = server_socket.accept()
+            new_info = self.fernet.decrypt(router_socket.recv(1024)).decode()
 
-            if self.routers_quantity < total_routers:
-                router_name = self.fernet.decrypt(
-                    router_socket.recv(1024)).decode()
+            if new_info == "nsfnet":
+                router_socket.sendall(pickle.dumps(self.nsfnet))
+
+            elif self.routers_quantity < total_routers:
+                router_name = new_info
                 node_id = self.network["Nodes"][router_name]
                 self.nsfnet.add_node(node_id, router_name)
                 self.routers_quantity += 1
@@ -71,12 +74,12 @@ class Controller:
                         distance = link["distance"]
                         self.nsfnet.add_link(from_node, to_node, 1/distance)
 
-                    node_ports = self.network["Ports"].values()
-                    json_to_send = self.compute_all_shortest_paths(self.nsfnet)
+                    self.node_ports = list(self.network["Ports"].values())
+                    self.compute_all_shortest_paths(self.nsfnet)
 
-                    for port in node_ports:
+                    for port in self.node_ports:
                         path_thread = threading.Thread(
-                            target=self.send_shortest_paths, args=(port, json_to_send))
+                            target=self.paths_updated, args=(port, ))
                         path_thread.start()
 
                     print("Starting node status checking")
@@ -98,7 +101,7 @@ class Controller:
         json_to_send : str
             A JSON string representing all shortest paths in the network.
         """
-        self.the_json = []
+        the_json = []
         if self.algorithm == 'dijkstra':
             all_paths = dict(nx.all_pairs_dijkstra_path(network.graph))
         elif self.algorithm == 'bellman_ford':
@@ -109,17 +112,16 @@ class Controller:
 
         for source, destinations in all_paths.items():
             for destination, path in destinations.items():
-                self.the_json.append(
+                the_json.append(
                     {
                         "source": source,
                         "destination": destination,
                         "path": path
                     }
                 )
-        json_to_send = json.dumps(self.the_json)
-        return json_to_send
+        self.write_json(the_json)
 
-    def send_shortest_paths(self, port, json_to_send):
+    def paths_updated(self, port):
         """
         Sends the shortest paths information to a router at the specified port.
 
@@ -129,17 +131,10 @@ class Controller:
             The port number of the router to which the shortest paths information
             will be sent.
 
-        json_to_send : str
-            The JSON-formatted string containing the shortest paths information
-            to be sent.
         """
         router_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         router_socket.connect(("localhost", port))
         router_socket.sendall(self.fernet.encrypt("New Path".encode()))
-        router_socket.sendall(self.fernet.encrypt(json_to_send.encode()))
-        print("Paths sended")
-
-        router_socket.sendall(pickle.dumps(self.nsfnet))
         router_socket.close()
 
     def send_to_server(self, server_host, server_port, message):
@@ -186,20 +181,20 @@ class Controller:
         """
         while True:
             time.sleep(10)
-            node_ports = list(self.network["Ports"].values())
-            for port in node_ports:
+            for port in self.node_ports:
                 status = self.send_to_server(
                     "localhost", port, "ACK")
                 if status == "no response":
-                    node_id = node_ports.index(port) + 1
+                    node_id = self.node_ports.index(port) + 1
                     self.nsfnet.remove_node(node_id)
+                    self.node_ports.remove(port)
                     self.routers_quantity -= 1
-                    json_to_send = self.compute_all_shortest_paths(self.nsfnet)
+                    self.compute_all_shortest_paths(self.nsfnet)
 
-                    for good_port in node_ports:
+                    for good_port in self.node_ports:
                         if good_port != port:
                             path_thread = threading.Thread(
-                                target=self.send_shortest_paths, args=(good_port, json_to_send))
+                                target=self.paths_updated, args=(good_port, ))
                             path_thread.start()
 
             print("check completed")
@@ -222,6 +217,22 @@ class Controller:
         with open(filename, 'r', encoding='utf-8-sig') as file:
             data = json.load(file)
         return data
+
+    def write_json(self, data, filename="Json/paths.json"):
+        """
+        Writes data to a JSON file.
+
+        Parameters
+        ----------
+            data : dict
+                the data to be written to the file
+            filename : str, optional
+                the name of the file (default is "paths.json")
+        """
+
+        with open(filename, 'w', encoding='utf-8-sig') as file:
+            # Convert Python dictionary to JSON and write to file
+            json.dump(data, file, indent=4)
 
 
 if __name__ == "__main__":

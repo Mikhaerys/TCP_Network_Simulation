@@ -54,13 +54,13 @@ The controller is responsible for:
 - Calculating and distributing paths using Dijkstra and Bellman-Ford algorithms.
 - Monitoring the status of routers and recalculating paths if a router goes offline.
 - Create the network following the architecture specified in network.json
+- Storing paths in `paths.json`.
 
 ### Routers
 
 Routers handle:
 - Managing client connections and storing their addresses in `clients_directory.json`.
 - Receiving and forwarding messages based on the paths provided by the controller.
-- Storing paths in `paths.json`.
 
 ### Clients
 

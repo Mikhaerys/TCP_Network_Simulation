@@ -1,5 +1,4 @@
 import json
-import pickle
 import socket
 import threading
 from cryptography.fernet import Fernet
@@ -22,7 +21,6 @@ class Router:
         self.clients = []
         key = b'HcEnve-04K7wN5sgrz1JgKufDMIYBbbTXr0Wueg3v7I='
         self.fernet = Fernet(key)
-        self.nsfnet = None
 
     def start(self):
         """
@@ -68,11 +66,7 @@ class Router:
             client_socket.sendall(self.fernet.encrypt(ack_answer.encode()))
 
         elif data == "New Path":
-            self.json_routes = json.loads(
-                self.fernet.decrypt(client_socket.recv(4096)).decode())
-            print(f"The path reached {self.router_name}")
-            self.nsfnet = pickle.loads(client_socket.recv(4096))
-            self.write_json(self.json_routes)
+            self.json_routes = self.read_json("Json/paths.json")
 
         elif data.startswith("New Client"):
             _, new_client = data.split("-")
@@ -109,10 +103,10 @@ class Router:
                     audio_data += new_data
 
                 self.send_to_server("localhost", int(
-                    destiny), data, audio=audio_data, nsfnet=True)
+                    destiny), data, audio=audio_data)
             else:
                 self.send_to_server("localhost", int(
-                    destiny), data, nsfnet=True)
+                    destiny), data)
 
         else:
             next_router = self.next_router(destiny_router)
@@ -153,6 +147,7 @@ class Router:
             if dictionary["source"] == source and dictionary["destination"] == destination:
                 path = dictionary["path"]
                 next_router = path[path.index(source) + 1]
+                print(f"Next router {next_router}")
                 return next_router
         return None
 
@@ -213,7 +208,7 @@ class Router:
         print(f"{self.router_name} Waiting for the paths")
         controller_socket.close()
 
-    def send_to_server(self, server_host, server_port, message, audio=None, nsfnet=None):
+    def send_to_server(self, server_host, server_port, message, audio=None):
         """
         Sends a message to the server.
 
@@ -236,10 +231,6 @@ class Router:
             server_socket.connect((server_host, server_port))
             # Send the message to the server
             server_socket.sendall(self.fernet.encrypt(message.encode()))
-
-            if nsfnet is not None:
-                server_socket.recv(1024)
-                server_socket.sendall(pickle.dumps(self.nsfnet))
 
             if audio is not None:
                 server_socket.recv(1024)
