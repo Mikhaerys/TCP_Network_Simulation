@@ -17,7 +17,7 @@ Follow these steps to set up the project on your local machine:
 
 1. **Clone the repository**:
    ```sh
-   git clone https://github.com/yourusername/tcp-network-simulation.git
+   git clone https://github.com/Mikhaerys/TCP_Network_Simulation.git
    cd tcp-network-simulation
    ```
 
