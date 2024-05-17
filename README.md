@@ -18,7 +18,7 @@ Follow these steps to set up the project on your local machine:
 1. **Clone the repository**:
    ```sh
    git clone https://github.com/Mikhaerys/TCP_Network_Simulation.git
-   cd tcp-network-simulation
+   cd TCP_Network_Simulation
    ```
 
 2. **Set up a virtual environment**:
